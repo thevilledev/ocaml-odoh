@@ -154,7 +154,6 @@ reads), and trial decryption by a target of a query for an unknown key.
 | --- | --- |
 | [cloudflare/odoh-go](https://github.com/cloudflare/odoh-go) (archived) | Its test vectors are reproduced: configuration, key identifier, and every response byte for byte. Live exchanges in both roles over 36 suites. |
 | [cloudflare/odoh-rs](https://github.com/cloudflare/odoh-rs) | The same test vectors, which it shares. Live exchanges in both roles over the mandatory suite, the only one it provides. |
-
 | [natesales/q](https://github.com/natesales/q) | Over HTTPS: q queries through the OCaml proxy, to the OCaml target and to doh-server. |
 | [DNSCrypt/doh-server](https://github.com/DNSCrypt/doh-server) | Over HTTP: the OCaml client queries it through the OCaml proxy, and the OCaml target resolves through it as a DoH server. |
 
