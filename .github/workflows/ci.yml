@@ -155,11 +155,14 @@ jobs:
         with:
           ocaml-compiler: "5.4"
           dune-cache: true
+      # q needs Go 1.25.5 or later, and setup-go turns toolchain downloads
+      # off, so this job does not take its version from the differential
+      # peer's go.mod. There is no go.sum here to key a cache on.
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: tools/differential/go/go.mod
-          cache-dependency-path: tools/differential/go/go.sum
+          go-version: "1.25.x"
+          cache: false
       - name: Install dependencies
         run: opam install ./odoh.opam ./odoh-cohttp-lwt.opam --deps-only --with-test
       - name: Run the black-box tests
