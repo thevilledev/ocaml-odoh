@@ -1,0 +1,6 @@
+(executable
+ (name fuzz_odoh)
+ (modules fuzz_odoh)
+ (libraries odoh hpke mirage-crypto-rng crowbar)
+ (enabled_if
+  (= %{profile} fuzz)))

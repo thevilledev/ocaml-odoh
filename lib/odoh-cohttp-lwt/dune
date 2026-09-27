@@ -1,0 +1,4 @@
+(library
+ (name odoh_cohttp_lwt)
+ (public_name odoh-cohttp-lwt)
+ (libraries odoh cohttp-lwt http lwt mirage-crypto-rng uri))

@@ -1,0 +1,5 @@
+; Shared by the tests and by tools/differential. Not installed.
+
+(library
+ (name odoh_test_support)
+ (libraries odoh hpke hpke.for_testing mirage-crypto-rng))

@@ -1,0 +1,23 @@
+(executable
+ (name basic)
+ (modules basic)
+ (libraries odoh mirage-crypto-rng mirage-crypto-rng.unix))
+
+; Servers and a client over cohttp-lwt-unix, which odoh and odoh-cohttp-lwt do
+; not depend on: they are built only when it is installed. test/blackbox runs
+; them against q and doh-server.
+
+(executables
+ (names odoh_target odoh_proxy odoh_client)
+ (modules odoh_target odoh_proxy odoh_client dns_wire)
+ (optional)
+ (libraries
+  odoh
+  odoh-cohttp-lwt
+  cohttp-lwt-unix
+  hpke
+  lwt
+  lwt.unix
+  uri
+  mirage-crypto-rng
+  mirage-crypto-rng.unix))

@@ -1,0 +1,5 @@
+*.ml linguist-language=OCaml
+*.mli linguist-language=OCaml
+test/vectors/** linguist-generated=true
+tools/differential/rust/Cargo.lock linguist-generated=true
+tools/differential/go/go.sum linguist-generated=true

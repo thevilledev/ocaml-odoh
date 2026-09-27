@@ -1,0 +1,12 @@
+[package]
+name = "peer"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+odoh-rs = { git = "https://github.com/cloudflare/odoh-rs", rev = "91f079f404de70562eee7c56d86b9e2576b70ef9" }
+bytes = "1"
+hex = "0.4"
+rand = { version = "0.10", features = ["thread_rng"], default-features = false }
+serde_json = "1"

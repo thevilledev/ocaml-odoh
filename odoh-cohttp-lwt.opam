@@ -1,0 +1,39 @@
+opam-version: "2.0"
+synopsis: "Oblivious DNS over HTTPS (RFC 9230) clients, proxies, and targets over cohttp-lwt"
+description: """
+The client, proxy, and target of Oblivious DNS over HTTPS (RFC 9230) as calls
+and server callbacks of cohttp-lwt, over the odoh package, with a target
+resolver that forwards to a DNS over HTTPS server.
+"""
+maintainer: ["Ville Vesilehto <ville@vesilehto.fi>"]
+authors: ["Ville Vesilehto <ville@vesilehto.fi>"]
+license: "ISC"
+tags: ["dns" "odoh" "rfc9230" "oblivious doh" "cohttp" "lwt"]
+homepage: "https://github.com/thevilledev/ocaml-odoh"
+bug-reports: "https://github.com/thevilledev/ocaml-odoh/issues"
+dev-repo: "git+https://github.com/thevilledev/ocaml-odoh.git"
+x-maintenance-intent: ["(latest)"]
+depends: [
+  "ocaml" {>= "4.14"}
+  "dune" {>= "3.12"}
+  "odoh" {= version}
+  "cohttp-lwt" {>= "6.0.0"}
+  "http" {>= "6.0.0"}
+  "lwt" {>= "5.3.0"}
+  "mirage-crypto-rng" {>= "2.4.0"}
+  "uri" {>= "4.0.0"}
+  "hpke" {with-test & >= "0.4.0~rc1"}
+  "cohttp-lwt-unix" {with-test & >= "6.0.0"}
+  "alcotest" {with-test & >= "1.7.0"}
+  "odoc" {with-doc}
+]
+# hpke 0.4.0 is not on opam yet; see odoh.opam.
+pin-depends: [
+  ["hpke.0.4.0~rc1" "git+https://github.com/thevilledev/ocaml-hpke.git#v0.4.0-rc1"]
+]
+build: [
+  ["dune" "subst"] {dev}
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
+  ["dune" "build" "@doc" "-p" name "-j" jobs] {with-doc}
+]

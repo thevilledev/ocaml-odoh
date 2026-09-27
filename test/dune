@@ -1,0 +1,18 @@
+(test
+ (name test_odoh)
+ (package odoh)
+ (libraries
+  odoh
+  odoh_test_support
+  hpke
+  hpke.for_testing
+  mirage-crypto-rng
+  alcotest
+  qcheck-core
+  qcheck-alcotest
+  yojson)
+ (deps
+  (glob_files vectors/*.json)
+  (glob_files vectors/differential/*.json)))
+
+(data_only_dirs blackbox)

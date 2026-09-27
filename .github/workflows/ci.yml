@@ -1,0 +1,166 @@
+name: CI
+
+# Branch pushes are covered by their pull request, so only main runs on push.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A new push to a pull request cancels its older run. Runs on main are left
+# to finish so every commit there gets a result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: OCaml ${{ matrix.ocaml-compiler }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        ocaml-compiler: ["4.14", "5.4"]
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@93303b622b2522e4411e295f9e77411a24912ac7 # v3.9.0
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          dune-cache: true
+      # hpke 0.4.0~rc1 comes from the pin-depends of the opam files.
+      - name: Install dependencies
+        run: opam install ./odoh.opam ./odoh-cohttp-lwt.opam --deps-only --with-test --with-doc
+      - name: Build, test, and build documentation
+        run: opam exec -- dune build @all @runtest @doc
+      - name: Run the example
+        run: opam exec -- dune exec examples/basic.exe
+
+  packaging:
+    name: opam packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@93303b622b2522e4411e295f9e77411a24912ac7 # v3.9.0
+        with:
+          ocaml-compiler: "5.4"
+          dune-cache: true
+      - name: Lint the opam packages
+        run: opam lint *.opam
+      # Each package must build and pass its tests with only the packages it
+      # depends on installed.
+      - name: Install odoh from its package definition
+        run: opam install ./odoh.opam --with-test
+      - name: Install odoh-cohttp-lwt from its package definition
+        run: opam install ./odoh-cohttp-lwt.opam --with-test
+
+  hygiene:
+    name: Formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@93303b622b2522e4411e295f9e77411a24912ac7 # v3.9.0
+        with:
+          ocaml-compiler: "5.4"
+          dune-cache: true
+      - name: Install the dev setup
+        run: opam install ./odoh.opam --deps-only --with-dev-setup
+      - name: Check formatting
+        run: opam exec -- dune build @fmt
+
+  fuzz:
+    name: Decoder fuzzing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@93303b622b2522e4411e295f9e77411a24912ac7 # v3.9.0
+        with:
+          ocaml-compiler: "5.4"
+          dune-cache: true
+      - name: Install test dependencies
+        run: opam install ./odoh.opam --deps-only --with-test
+      - name: Compile the fuzz target
+        run: opam exec -- dune build --profile fuzz fuzz/fuzz_odoh.exe
+      # --repeat counts runs of each test.
+      - name: Run bounded fuzzing
+        run: opam exec -- _build/default/fuzz/fuzz_odoh.exe --repeat 500 --seed 9230
+
+  # The Go peer only: the Rust peer needs a Docker build that is slow to
+  # repeat, and what both produced is replayed by the test job.
+  differential:
+    name: Differential against odoh-go
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@93303b622b2522e4411e295f9e77411a24912ac7 # v3.9.0
+        with:
+          ocaml-compiler: "5.4"
+          dune-cache: true
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: tools/differential/go/go.mod
+          cache-dependency-path: tools/differential/go/go.sum
+      - name: Install test dependencies
+        run: opam install ./odoh.opam --deps-only --with-test
+      - name: Build the driver
+        run: opam exec -- dune build ./tools/differential/differential.exe
+      - name: Build the Go peer
+        working-directory: tools/differential/go
+        run: go build -o ../../../go-peer .
+      - name: Compare against the Go peer
+        run: opam exec -- ./_build/default/tools/differential/differential.exe --peer go=./go-peer
+
+  # q and doh-server over real HTTP, with Caddy for TLS: see
+  # test/blackbox/run.sh. doh-server is built from source, which is the slow
+  # part.
+  blackbox:
+    name: Black-box against q and doh-server
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@93303b622b2522e4411e295f9e77411a24912ac7 # v3.9.0
+        with:
+          ocaml-compiler: "5.4"
+          dune-cache: true
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: tools/differential/go/go.mod
+          cache-dependency-path: tools/differential/go/go.sum
+      - name: Install dependencies
+        run: opam install ./odoh.opam ./odoh-cohttp-lwt.opam --deps-only --with-test
+      - name: Run the black-box tests
+        run: test/blackbox/run.sh

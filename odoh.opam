@@ -1,0 +1,40 @@
+opam-version: "2.0"
+synopsis: "Oblivious DNS over HTTPS (RFC 9230) for OCaml"
+description: """
+An implementation of Oblivious DNS over HTTPS (RFC 9230): target
+configurations, query and response encryption for clients and targets, and the
+forwarding rules of the proxy, with the cryptography delegated to the hpke
+package. The library performs no I/O and does not parse DNS messages, so any
+HTTP library can carry the messages and any DNS library can produce them.
+"""
+maintainer: ["Ville Vesilehto <ville@vesilehto.fi>"]
+authors: ["Ville Vesilehto <ville@vesilehto.fi>"]
+license: "ISC"
+tags: ["cryptography" "privacy" "dns" "odoh" "rfc9230" "oblivious doh" "hpke"]
+homepage: "https://github.com/thevilledev/ocaml-odoh"
+bug-reports: "https://github.com/thevilledev/ocaml-odoh/issues"
+dev-repo: "git+https://github.com/thevilledev/ocaml-odoh.git"
+x-maintenance-intent: ["(latest)"]
+depends: [
+  "ocaml" {>= "4.14"}
+  "dune" {>= "3.12"}
+  "hpke" {>= "0.4.0~rc1"}
+  "mirage-crypto-rng" {>= "2.4.0"}
+  "alcotest" {with-test & >= "1.7.0"}
+  "qcheck-alcotest" {with-test & >= "0.25"}
+  "crowbar" {with-test & >= "0.2.1"}
+  "yojson" {with-test & >= "2.0.0"}
+  "odoc" {with-doc}
+  "ocamlformat" {with-dev-setup & = "0.29.0"}
+]
+# hpke 0.4.0 is not on opam yet. Remove this and raise the bound above to
+# {>= "0.4.0"} once it is; opam-repository does not accept pin-depends.
+pin-depends: [
+  ["hpke.0.4.0~rc1" "git+https://github.com/thevilledev/ocaml-hpke.git#v0.4.0-rc1"]
+]
+build: [
+  ["dune" "subst"] {dev}
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
+  ["dune" "build" "@doc" "-p" name "-j" jobs] {with-doc}
+]

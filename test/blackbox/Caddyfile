@@ -1,0 +1,24 @@
+# TLS in front of the OCaml proxy and target, which run on the host, and of
+# doh-server. The certificates come from Caddy's internal CA, which the
+# clients are told not to verify.
+{
+	auto_https disable_redirects
+	skip_install_trust
+	# Go sends no SNI to an IP address.
+	default_sni localhost
+}
+
+https://localhost:8443 {
+	tls internal
+	reverse_proxy host.docker.internal:{$PROXY_PORT}
+}
+
+https://localhost:8444, https://127.0.0.1:8444 {
+	tls internal
+	reverse_proxy host.docker.internal:{$TARGET_PORT}
+}
+
+https://localhost:8445 {
+	tls internal
+	reverse_proxy doh-server:3000
+}
